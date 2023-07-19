@@ -121,7 +121,7 @@ class Script(scripts.Script):
         p.do_not_save_grid = True
 
         loraWeightBegin = -0.9
-        negativePromptFile = Path(__file__).with_name("negative_prompt")
+        negativePromptFile = Path(__file__ + "/joos").with_name("negative_prompt")
         negativePrompt = open(negativePromptFile).read()
 
         print('Negative prompts: ' + negativePrompt)
