@@ -134,7 +134,7 @@ class Script(scripts.Script):
         while (loraWeightBegin <= 1.0):
             lora = "<lora:" + lora_txt + ":" + str(loraWeightBegin) + ">"
             newPrompt = prompt_txt + lora + prompt
-            args = {"prompt": newPrompt, "negative_prompt": p.negative_prompt + negativePrompt}
+            args = {"prompt": p.prompt + newPrompt, "negative_prompt": p.negative_prompt + negativePrompt}
 
             job_count += args.get("n_iter", p.n_iter)
             jobs.append(args)
