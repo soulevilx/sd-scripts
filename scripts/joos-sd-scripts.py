@@ -128,12 +128,10 @@ class Script(scripts.Script):
         promptFile = Path(__file__).with_name("negative_prompt")
         prompt = open(promptFile).read()
 
-        print('Negative prompts: ' + negativePrompt)
-
         job_count = 0
         jobs = []
 
-        while (loraWeightBegin <= 1.1):
+        while (loraWeightBegin <= 1.0):
             lora = "<lora:" + lora_txt + ":" + str(loraWeightBegin) + ">"
             newPrompt = prompt_txt + lora + prompt
             args = {"prompt": newPrompt, "negative_prompt": p.negative_prompt + negativePrompt}
@@ -153,13 +151,16 @@ class Script(scripts.Script):
         infotexts = []
 
         for args in jobs:
+
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
             copy_p = copy.copy(p)
             for k, v in args.items():
                 setattr(copy_p, k, v)
 
-            print(vars(copy_p))
+            print('Prompts: ' + copy_p.prompt + "\n")
+            print('Negative prompts: ' + copy_p.negative_prompt + "\n")
+
             proc = process_images(copy_p)
             images += proc.images
 
