@@ -122,10 +122,10 @@ class Script(scripts.Script):
 
         loraWeightBegin = -0.9
 
-        negativePromptFile = Path(__file__).with_name("negative_prompt")
+        negativePromptFile = Path(__file__ + "/joos").with_name("negative_prompt")
         negativePrompt = open(negativePromptFile).read()
 
-        promptFile = Path(__file__).with_name("negative_prompt")
+        promptFile = Path(__file__ + "/joos").with_name("prompt")
         prompt = open(promptFile).read()
 
         job_count = 0
