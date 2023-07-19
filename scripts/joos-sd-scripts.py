@@ -121,8 +121,12 @@ class Script(scripts.Script):
         p.do_not_save_grid = True
 
         loraWeightBegin = -0.9
-        negativePromptFile = Path(__file__ + "/joos").with_name("negative_prompt")
+
+        negativePromptFile = Path(__file__).with_name("negative_prompt")
         negativePrompt = open(negativePromptFile).read()
+
+        promptFile = Path(__file__).with_name("negative_prompt")
+        prompt = open(promptFile).read()
 
         print('Negative prompts: ' + negativePrompt)
 
@@ -131,7 +135,7 @@ class Script(scripts.Script):
 
         while (loraWeightBegin <= 1.1):
             lora = "<lora:" + lora_txt + ":" + str(loraWeightBegin) + ">"
-            newPrompt = prompt_txt + lora
+            newPrompt = prompt_txt + lora + prompt
             args = {"prompt": newPrompt, "negative_prompt": p.negative_prompt + negativePrompt}
 
             job_count += args.get("n_iter", p.n_iter)
