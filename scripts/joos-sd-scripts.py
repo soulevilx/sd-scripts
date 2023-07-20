@@ -145,9 +145,6 @@ class Script(scripts.Script):
             args['prompt'] = p.prompt + "," + prompt_txt + "," + lora + "," + prompt
             args['negative_prompt'] = p.negative_prompt + "," + negativePrompt
 
-            logging.info('Prompt: ' + str(args['prompt']))
-            logging.info('Negative prompt: ' + str(args['negative_prompt']))
-
             if (checkbox_random_seed) and p.seed == -1:
                 args['seed'] = int(random.randrange(4294967294))
 
