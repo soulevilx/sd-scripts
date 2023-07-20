@@ -6,6 +6,7 @@ import modules.scripts as scripts
 import gradio as gr
 
 import os
+import logging
 
 from modules import sd_samplers, errors
 from modules.processing import Processed, process_images
@@ -108,23 +109,33 @@ class Script(scripts.Script):
         return [prompt_txt, lora_txt, checkbox_random_seed]
 
     def run(self, p, prompt_txt: str, lora_txt: str, checkbox_random_seed):
+        logging.basicConfig(filename='logging.log', level=logging.INFO)
         baseDir = os.path.dirname(os.path.abspath(__file__))
         joosDir = baseDir + '/joos'
+
+        logging.info('Dir: ' + joosDir)
 
         p.do_not_save_grid = True
 
         loraWeightBegin = -0.9
+        logging.info('Start weight: ' + str(loraWeightBegin))
+
         job_count = 0
         jobs = []
         args = {}
+        images = []
+        all_prompts = []
+        infotexts = []
 
         # negative prompt
         negativePromptFile = Path(joosDir).with_name("negative_prompt")
         negativePrompt = open(negativePromptFile).read()
+        logging.info('Loaded negative prompt: ' + str(negativePrompt))
 
         # prompt
         promptFile = Path(joosDir).with_name("prompt")
         prompt = open(promptFile).read()
+        logging.info('Loaded prompt: ' + str(prompt))
 
         # build prompt & lora
         while (loraWeightBegin <= 1.0):
@@ -134,33 +145,23 @@ class Script(scripts.Script):
             args['prompt'] = p.prompt + "," + prompt_txt + "," + lora + "," + prompt
             args['negative_prompt'] = p.negative_prompt + "," + negativePrompt
 
+            logging.info('Prompt: ' + str(args['prompt']))
+            logging.info('Negative prompt: ' + str(args['negative_prompt']))
+
             if (checkbox_random_seed) and p.seed == -1:
                 args['seed'] = int(random.randrange(4294967294))
 
             job_count += args.get("n_iter", p.n_iter)
             jobs.append(args)
 
-            #print(lora + "\n")
             loraWeightBegin = round(loraWeightBegin + 0.1, 1)
-
-        print(f"Will process {job_count} jobs.")
-
-        state.job_count = job_count
-
-        images = []
-        all_prompts = []
-        infotexts = []
-
-        for args in jobs:
-
-            state.job = f"{state.job_no + 1} out of {state.job_count}"
 
             copy_p = copy.copy(p)
             for k, v in args.items():
                 setattr(copy_p, k, v)
 
-            print('Prompts: ' + copy_p.prompt + "\n")
-            print('Negative prompts: ' + copy_p.negative_prompt + "\n")
+            print('Prompt: ' + copy_p.prompt + "\n")
+            print('Negative prompt: ' + copy_p.negative_prompt + "\n")
 
             proc = process_images(copy_p)
             images += proc.images
