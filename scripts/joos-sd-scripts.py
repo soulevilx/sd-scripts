@@ -5,28 +5,25 @@ import shlex
 import modules.scripts as scripts
 import gradio as gr
 
+import os
+
 from modules import sd_samplers, errors
 from modules.processing import Processed, process_images
 from modules.shared import state
 
 from pathlib import Path
 
-
 def process_string_tag(tag):
     return tag
-
 
 def process_int_tag(tag):
     return int(tag)
 
-
 def process_float_tag(tag):
     return float(tag)
 
-
 def process_boolean_tag(tag):
     return True if (tag == "true") else False
-
 
 prompt_tags = {
     "sd_model": None,
@@ -54,7 +51,6 @@ prompt_tags = {
     "do_not_save_samples": process_boolean_tag,
     "do_not_save_grid": process_boolean_tag
 }
-
 
 def cmdargs(line):
     args = shlex.split(line)
@@ -93,7 +89,6 @@ def cmdargs(line):
 
     return res
 
-
 def load_prompt_file(file):
     if file is None:
         return None, gr.update(), gr.update(lines=7)
@@ -101,45 +96,51 @@ def load_prompt_file(file):
         lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
         return None, "\n".join(lines), gr.update(lines=7)
 
-
 class Script(scripts.Script):
     def title(self):
-        return "Lora weights"
+        return "Dynamic massive generate"
 
     def ui(self, is_img2img):
-        prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
+        prompt_txt = gr.Textbox(label="Custom prompt", lines=1, elem_id=self.elem_id("prompt_txt"))
         lora_txt = gr.Textbox(label="Specific lora", lines=1, elem_id=self.elem_id("lora_txt"))
+        checkbox_random_seed = gr.Checkbox(label="Random seed for each prompt", value=False, elem_id=self.elem_id("checkbox_random_seed"))
 
-        # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
-        # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
-        # be unclear to the user that shift-enter is needed.
-        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt],
-                          outputs=[prompt_txt], show_progress=False)
-        return [prompt_txt, lora_txt]
+        return [prompt_txt, lora_txt, checkbox_random_seed]
 
-    def run(self, p, prompt_txt: str, lora_txt: str):
+    def run(self, p, prompt_txt: str, lora_txt: str, checkbox_random_seed):
+        baseDir = os.path.dirname(os.path.abspath(__file__))
+        joosDir = baseDir + '/joos'
+
         p.do_not_save_grid = True
 
         loraWeightBegin = -0.9
-
-        negativePromptFile = Path(__file__ + "/joos").with_name("negative_prompt")
-        negativePrompt = open(negativePromptFile).read()
-
-        promptFile = Path(__file__ + "/joos").with_name("prompt")
-        prompt = open(promptFile).read()
-
         job_count = 0
         jobs = []
+        args = {}
 
+        # negative prompt
+        negativePromptFile = Path(joosDir).with_name("negative_prompt")
+        negativePrompt = open(negativePromptFile).read()
+
+        # prompt
+        promptFile = Path(joosDir).with_name("prompt")
+        prompt = open(promptFile).read()
+
+        # build prompt & lora
         while (loraWeightBegin <= 1.0):
             lora = "<lora:" + lora_txt + ":" + str(loraWeightBegin) + ">"
-            newPrompt = prompt_txt + lora + prompt
-            args = {"prompt": p.prompt + newPrompt, "negative_prompt": p.negative_prompt + negativePrompt}
+            # main prompt + custom prompt + lora + fixed prompt
+            # main negative prompt + fixed negative prompt
+            args['prompt'] = p.prompt + "," + prompt_txt + "," + lora + "," + prompt
+            args['negative_prompt'] = p.negative_prompt + "," + negativePrompt
+
+            if (checkbox_random_seed) and p.seed == -1:
+                args['seed'] = int(random.randrange(4294967294))
 
             job_count += args.get("n_iter", p.n_iter)
             jobs.append(args)
 
-            print(lora + "\n")
+            #print(lora + "\n")
             loraWeightBegin = round(loraWeightBegin + 0.1, 1)
 
         print(f"Will process {job_count} jobs.")
