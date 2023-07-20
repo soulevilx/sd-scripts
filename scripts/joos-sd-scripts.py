@@ -162,6 +162,7 @@ class Script(scripts.Script):
 
             print('Prompt: ' + copy_p.prompt + "\n")
             print('Negative prompt: ' + copy_p.negative_prompt + "\n")
+            print('Seed: ' + str(copy_p.seed) + "\n")
 
             proc = process_images(copy_p)
             images += proc.images
